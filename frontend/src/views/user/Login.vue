@@ -38,6 +38,14 @@
                 @keyup.enter="submit"
               />
             </el-form-item>
+            <el-alert
+              v-if="errorMessage"
+              :title="errorMessage"
+              type="error"
+              :closable="false"
+              show-icon
+              class="login-error-alert"
+            />
             <el-button type="primary" size="large" @click="submit" :loading="loading" class="submit-btn">
               登录
             </el-button>
@@ -60,10 +68,12 @@ import { ElMessage } from 'element-plus'
 import NavBar from '@/components/NavBar.vue'
 import FooterBar from '@/components/FooterBar.vue'
 import { authApi } from '@/api/auth'
+import { resolveRequestErrorMessage } from '@/api/errorMessage'
 
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
+const errorMessage = ref('')
 const form = reactive({ username: '', password: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -73,6 +83,7 @@ const rules = {
 const submit = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
+  errorMessage.value = ''
   loading.value = true
   try {
     const res = await authApi.login({ ...form })
@@ -80,6 +91,8 @@ const submit = async () => {
     localStorage.setItem('username', res.username)
     ElMessage.success('登录成功')
     router.push('/')
+  } catch (error) {
+    errorMessage.value = resolveRequestErrorMessage(error, '登录失败，请检查账号和密码')
   } finally {
     loading.value = false
   }
@@ -183,6 +196,10 @@ const submit = async () => {
   min-height: 46px;
   margin-top: 8px;
   letter-spacing: 0.2em;
+}
+
+.login-error-alert {
+  margin: 6px 0 14px;
 }
 
 .auth-link {

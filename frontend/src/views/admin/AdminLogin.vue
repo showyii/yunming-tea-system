@@ -22,6 +22,14 @@
           <el-form-item prop="password">
             <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" show-password />
           </el-form-item>
+          <el-alert
+            v-if="errorMessage"
+            :title="errorMessage"
+            type="error"
+            :closable="false"
+            show-icon
+            class="login-error-alert"
+          />
           <el-form-item>
             <el-button type="primary" class="login-btn" @click="doLogin" :loading="loading">登录</el-button>
           </el-form-item>
@@ -41,10 +49,12 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAdminStore } from '@/stores/admin'
+import { resolveRequestErrorMessage } from '@/api/errorMessage'
 
 const router = useRouter()
 const adminStore = useAdminStore()
 const loading = ref(false)
+const errorMessage = ref('')
 const form = reactive({ username: '', password: '' })
 const rules = {
   username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
@@ -52,13 +62,14 @@ const rules = {
 }
 
 const doLogin = async () => {
+  errorMessage.value = ''
   loading.value = true
   try {
     await adminStore.login(form)
     ElMessage.success('登录成功')
     router.push('/admin/dashboard')
-  } catch {
-    // handled by interceptor
+  } catch (error) {
+    errorMessage.value = resolveRequestErrorMessage(error, '登录失败，请检查账号和密码')
   } finally {
     loading.value = false
   }
@@ -139,6 +150,10 @@ const doLogin = async () => {
   width: 100%;
   min-height: 46px;
   letter-spacing: 0.2em;
+}
+
+.login-error-alert {
+  margin-bottom: 18px;
 }
 
 .login-actions {
