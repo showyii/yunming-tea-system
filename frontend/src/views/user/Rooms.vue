@@ -71,25 +71,32 @@
         </el-form-item>
         <el-form-item label="时间" required>
           <div class="time-row">
-            <el-time-select
+            <el-select
               v-model="form.startTime"
-              :max-time="form.endTime || '23:00'"
               placeholder="开始"
-              start="08:00"
-              step="01:00"
-              end="22:00"
               style="width:45%"
-            />
+              @change="onStartTimeChange"
+            >
+              <el-option
+                v-for="t in startTimeOptions"
+                :key="t"
+                :label="t"
+                :value="t"
+              />
+            </el-select>
             <span>至</span>
-            <el-time-select
+            <el-select
               v-model="form.endTime"
-              :min-time="form.startTime || '09:00'"
               placeholder="结束"
-              start="09:00"
-              step="01:00"
-              end="23:00"
               style="width:45%"
-            />
+            >
+              <el-option
+                v-for="t in endTimeOptions"
+                :key="t"
+                :label="t"
+                :value="t"
+              />
+            </el-select>
           </div>
         </el-form-item>
         <el-form-item label="人数" prop="guestCount">
@@ -114,7 +121,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import NavBar from '@/components/NavBar.vue'
 import FooterBar from '@/components/FooterBar.vue'
@@ -138,6 +145,22 @@ const form = reactive({
 
 const rules = {
   bookingDate: [{ required: true, message: '请选择日期', trigger: 'change' }]
+}
+
+const timeSlots = Array.from({ length: 16 }, (_, i) => `${String(8 + i).padStart(2, '0')}:00`)
+
+const startTimeOptions = computed(() => timeSlots.slice(0, -1))
+
+const endTimeOptions = computed(() => {
+  if (!form.startTime) return timeSlots.slice(1)
+  const startIdx = timeSlots.indexOf(form.startTime)
+  return timeSlots.slice(startIdx + 1)
+})
+
+const onStartTimeChange = () => {
+  if (form.endTime && form.endTime <= form.startTime) {
+    form.endTime = ''
+  }
 }
 
 const typeText = (t) => ({ SMALL: '小包间', MEDIUM: '中包间', LARGE: '大包间', VIP: '贵宾间' }[t] || t)

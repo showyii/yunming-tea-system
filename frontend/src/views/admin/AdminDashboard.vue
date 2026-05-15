@@ -41,11 +41,12 @@ import {
   LegendComponent,
   TooltipComponent
 } from 'echarts/components'
+import { LegacyGridContainLabel } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 import { graphic, init } from 'echarts/core'
 import { statisticsApi } from '@/api/admin'
 
-use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
+use([BarChart, LineChart, PieChart, GridComponent, LegacyGridContainLabel, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const loading = ref(false)
 const dailyChart = ref(null)

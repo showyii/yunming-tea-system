@@ -60,7 +60,9 @@ public class ActivitySignupServiceImpl implements ActivitySignupService {
     @Override
     public List<ActivitySignupVO> mySignups(Long userId) {
         LambdaQueryWrapper<ActivitySignup> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ActivitySignup::getUserId, userId).orderByDesc(ActivitySignup::getCreateTime);
+        wrapper.eq(ActivitySignup::getUserId, userId)
+                .ne(ActivitySignup::getStatus, 2)
+                .orderByDesc(ActivitySignup::getCreateTime);
         List<ActivitySignup> signups = signupMapper.selectList(wrapper);
 
         List<ActivitySignupVO> result = new ArrayList<>();
