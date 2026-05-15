@@ -33,6 +33,34 @@
             <div><strong>销量</strong><span>{{ product.sales }}</span></div>
           </div>
 
+          <div class="detail-purchase paper-subpanel">
+            <div class="detail-purchase__row">
+              <span>选择数量</span>
+              <el-input-number
+                v-model="purchaseQuantity"
+                :min="1"
+                :max="maxPurchaseQuantity"
+                size="large"
+                :disabled="product.stock < 1"
+              />
+            </div>
+            <p class="detail-purchase__tip">
+              {{ product.stock > 0 ? `当前库存 ${product.stock} 件，可先加入购物车再统一下单。` : '当前商品库存不足，暂时无法加入购物车。' }}
+            </p>
+            <div class="detail-purchase__actions">
+              <el-button
+                type="primary"
+                size="large"
+                :loading="addingToCart"
+                :disabled="product.stock < 1"
+                @click="addToCart"
+              >
+                加入购物车
+              </el-button>
+              <el-button size="large" :disabled="!hasAddedToCart" @click="goToCart">去购物车</el-button>
+            </div>
+          </div>
+
           <div class="detail-hero__actions">
             <el-button type="danger" size="large" @click="toggleFavorite">
               <el-icon><Star /></el-icon>
@@ -100,7 +128,10 @@
                 <p class="comment-text">{{ c.content }}</p>
               </div>
             </article>
-            <div v-if="!commentLoading && comments.length === 0" class="empty paper-subpanel">暂无评价，欢迎首评</div>
+            <div v-if="!commentLoading && commentLoadFailed" class="empty paper-subpanel">
+              评价内容暂时加载失败，你可以稍后再看，商品详情与购买流程不受影响。
+            </div>
+            <div v-else-if="!commentLoading && comments.length === 0" class="empty paper-subpanel">暂无评价，欢迎首评</div>
           </div>
           <div class="pagination" v-if="commentTotal > commentSize">
             <el-pagination
@@ -121,15 +152,17 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import NavBar from '@/components/NavBar.vue'
 import FooterBar from '@/components/FooterBar.vue'
+import { cartApi } from '@/api/cart'
 import { commentApi, favoriteApi, productApi } from '@/api/product'
 import { resolveProductGallery, resolveProductImage } from '@/utils/localImage'
 
 const route = useRoute()
+const router = useRouter()
 const product = ref({})
 const loading = ref(false)
 const currentImage = ref('')
@@ -142,8 +175,13 @@ const commentLoading = ref(false)
 const commentPage = ref(1)
 const commentSize = ref(10)
 const commentTotal = ref(0)
+const commentLoadFailed = ref(false)
 const isLoggedIn = !!localStorage.getItem('token')
 const detailImages = ref([])
+const purchaseQuantity = ref(1)
+const addingToCart = ref(false)
+const hasAddedToCart = ref(false)
+const maxPurchaseQuantity = computed(() => Math.max(1, Number(product.value.stock) || 1))
 
 const loadDetail = async () => {
   loading.value = true
@@ -151,6 +189,8 @@ const loadDetail = async () => {
     product.value = await productApi.getDetail(route.params.id)
     detailImages.value = resolveProductGallery(product.value)
     currentImage.value = resolveProductImage(product.value, product.value.mainImage)
+    purchaseQuantity.value = product.value.stock > 0 ? 1 : 1
+    hasAddedToCart.value = false
   } finally {
     loading.value = false
   }
@@ -158,10 +198,15 @@ const loadDetail = async () => {
 
 const loadComments = async () => {
   commentLoading.value = true
+  commentLoadFailed.value = false
   try {
     const res = await commentApi.getList(route.params.id, { page: commentPage.value, size: commentSize.value })
     comments.value = res.records || []
     commentTotal.value = res.total || 0
+  } catch (error) {
+    comments.value = []
+    commentTotal.value = 0
+    commentLoadFailed.value = true
   } finally {
     commentLoading.value = false
   }
@@ -203,6 +248,38 @@ const submitComment = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+const addToCart = async () => {
+  if (!isLoggedIn) {
+    ElMessage.warning('请先登录后再加入购物车')
+    router.push('/login')
+    return
+  }
+  if (product.value.stock < 1) {
+    ElMessage.warning('当前商品库存不足')
+    return
+  }
+
+  addingToCart.value = true
+  try {
+    await cartApi.add({
+      productId: Number(route.params.id),
+      quantity: purchaseQuantity.value
+    })
+    hasAddedToCart.value = true
+    ElMessage.success('已加入购物车，可前往购物车统一结算')
+  } finally {
+    addingToCart.value = false
+  }
+}
+
+const goToCart = () => {
+  if (!isLoggedIn) {
+    router.push('/login')
+    return
+  }
+  router.push('/cart')
 }
 
 const formatTime = (t) => {
@@ -338,6 +415,37 @@ onMounted(() => {
 .detail-hero__meta span {
   color: var(--color-ink);
   font-size: 18px;
+}
+
+.detail-purchase {
+  margin-bottom: 24px;
+}
+
+.detail-purchase__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--color-ink);
+}
+
+.detail-purchase__row span {
+  color: var(--color-wood);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.detail-purchase__tip {
+  margin: 12px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.detail-purchase__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .main-image {

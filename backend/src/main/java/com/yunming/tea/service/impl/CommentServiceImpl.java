@@ -59,6 +59,16 @@ public class CommentServiceImpl implements CommentService {
         Page<Comment> page = new Page<>(pageNum, pageSize);
         Page<Comment> result = commentMapper.selectPage(page, wrapper);
 
+        if (result.getRecords().isEmpty()) {
+            Page<CommentVO> emptyPage = new Page<>();
+            emptyPage.setRecords(List.of());
+            emptyPage.setTotal(result.getTotal());
+            emptyPage.setCurrent(result.getCurrent());
+            emptyPage.setSize(result.getSize());
+            emptyPage.setPages(result.getPages());
+            return emptyPage;
+        }
+
         List<Long> userIds = result.getRecords().stream()
                 .map(Comment::getUserId).distinct().collect(Collectors.toList());
 
@@ -102,6 +112,16 @@ public class CommentServiceImpl implements CommentService {
 
         Page<Comment> page = new Page<>(pageNum, pageSize);
         Page<Comment> result = commentMapper.selectPage(page, wrapper);
+
+        if (result.getRecords().isEmpty()) {
+            Page<CommentVO> emptyPage = new Page<>();
+            emptyPage.setRecords(List.of());
+            emptyPage.setTotal(result.getTotal());
+            emptyPage.setCurrent(result.getCurrent());
+            emptyPage.setSize(result.getSize());
+            emptyPage.setPages(result.getPages());
+            return emptyPage;
+        }
 
         List<Long> userIds = result.getRecords().stream()
                 .map(Comment::getUserId).distinct().collect(Collectors.toList());
