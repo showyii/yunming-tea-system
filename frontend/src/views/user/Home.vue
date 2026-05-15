@@ -45,7 +45,7 @@
     <section class="container desktop-section">
       <div class="section-title">
         <h2>六大茶类快捷入口</h2>
-        <p>首页只保留一层轻量入口，帮你按风味快速进入；如果还想先理解差异，再慢慢做决定，可以进入完整分类导购页。</p>
+        <p>如果还想先理解差异，再慢慢做决定，可以进入完整分类导购页。</p>
       </div>
 
       <TeaCategoryShowcase
