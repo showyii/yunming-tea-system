@@ -1,0 +1,14 @@
+.idea/
+*.iml
+
+frontend/node_modules/
+frontend/dist/
+
+backend/target/
+backend/BOOT-INF/
+
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
