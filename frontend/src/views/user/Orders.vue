@@ -1,14 +1,27 @@
+<!--
+  我的订单页（Orders.vue）
+  云茗茶馆的用户订单列表页面，展示所有订单并支持状态筛选。
+  页面功能：
+  - 顶部概览区：当前筛选状态、当前页记录数
+  - 状态标签切换：全部 / 待付款 / 已付款 / 已发货 / 已完成 / 已取消
+  - 订单卡片列表：订单编号、状态、商品预览、金额、操作按钮
+  - 支持查看详情、取消订单、模拟付款
+  - 分页组件
+-->
 <template>
   <div class="page">
+    <!-- 页面顶部导航栏 -->
     <NavBar />
 
     <div class="container orders-page" v-loading="loading">
+      <!-- ========== 顶部：概览区 ========== -->
       <section class="inner-hero paper-panel">
         <div class="inner-hero__copy">
           <h1>把每一笔买茶记录稳稳收好，金额、状态与后续安排都看得明白</h1>
           <p>无论是刚下单、已经付款，还是正在等茶寄到，这里都会把每一笔订单的进度安静列好，方便你随时回来看看。</p>
         </div>
 
+        <!-- 右侧订单概览 -->
         <div class="inner-hero__aside">
           <strong>订单概览</strong>
           <div class="hero-summary">
@@ -23,12 +36,14 @@
         </div>
       </section>
 
+      <!-- ========== 订单记录区 ========== -->
       <section class="desktop-section">
         <div class="section-title section-title-left">
           <h2>订单记录</h2>
           <p>按状态筛一筛，就能更快找到正在等付款、等发货，或已经收妥的那一单，回看和处理都会更顺手。</p>
         </div>
 
+        <!-- 状态标签切换栏（圆角胶囊按钮） -->
         <div class="status-tabs paper-panel">
           <button
             v-for="status in statusTabs"
@@ -40,8 +55,11 @@
           </button>
         </div>
 
+        <!-- 订单列表 -->
         <div v-if="orders.length > 0" class="order-list">
+          <!-- 单个订单卡片 -->
           <article v-for="order in orders" :key="order.id" class="order-card paper-panel">
+            <!-- 订单头部：订单编号 + 状态标签 -->
             <div class="order-card__header">
               <div>
                 <span class="order-card__eyebrow">Order No.</span>
@@ -50,6 +68,7 @@
               <span class="order-card__status" :class="statusClass(order.status)">{{ statusText(order.status) }}</span>
             </div>
 
+            <!-- 订单主体：商品封面图 + 摘要信息 + 金额（点击跳转详情） -->
             <div class="order-card__body" @click="$router.push(`/orders/${order.id}`)">
               <div class="order-card__image">
                 <img :src="resolveProductImage(order, order.firstProductImage)" alt="">
@@ -66,20 +85,24 @@
               <div class="order-card__amount">¥{{ order.totalAmount }}</div>
             </div>
 
+            <!-- 订单操作按钮区 -->
             <div class="order-card__actions">
               <el-button @click="$router.push(`/orders/${order.id}`)">查看详情</el-button>
+              <!-- 待付款状态：显示取消订单 + 立即付款 -->
               <el-button v-if="order.status === 0" type="warning" @click="doCancel(order)">取消订单</el-button>
               <el-button v-if="order.status === 0" type="primary" @click="doPay(order)">立即付款</el-button>
             </div>
           </article>
         </div>
 
+        <!-- 空状态提示 -->
         <div v-else-if="!loading" class="empty-state paper-panel">
           <h3>{{ currentStatus !== null ? '暂无此类订单' : '还没有任何订单' }}</h3>
           <p>等你从茶品页带走喜欢的茶后，这里就会慢慢记下每一笔购买与寄送进度。</p>
           <router-link to="/products" class="inner-hero__link">去逛逛茶品</router-link>
         </div>
 
+        <!-- 分页组件 -->
         <div class="pagination" v-if="total > size">
           <el-pagination
             v-model:current-page="page"
@@ -93,11 +116,16 @@
       </section>
     </div>
 
+    <!-- 页面底部页脚栏 -->
     <FooterBar />
   </div>
 </template>
 
 <script setup>
+/**
+ * 我的订单页脚本逻辑
+ * 负责：状态筛选、订单列表加载、取消订单、模拟支付
+ */
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import NavBar from '@/components/NavBar.vue'
@@ -105,13 +133,15 @@ import FooterBar from '@/components/FooterBar.vue'
 import { orderApi } from '@/api/order'
 import { resolveProductImage } from '@/utils/localImage'
 
-const orders = ref([])
-const loading = ref(false)
-const page = ref(1)
-const size = ref(10)
-const total = ref(0)
-const currentStatus = ref(null)
+// ===== 响应式变量 =====
+const orders = ref([])            // 订单列表
+const loading = ref(false)        // 页面加载状态
+const page = ref(1)               // 当前页码
+const size = ref(10)              // 每页条数
+const total = ref(0)              // 订单总数
+const currentStatus = ref(null)   // 当前筛选状态（null 表示全部）
 
+// ===== 状态标签定义 =====
 const statusTabs = [
   { label: '全部', value: null },
   { label: '待付款', value: 0 },
@@ -121,10 +151,27 @@ const statusTabs = [
   { label: '已取消', value: 4 }
 ]
 
+// ===== 计算属性 =====
+// 当前选中标签的文字
 const currentTabLabel = computed(() => statusTabs.find((item) => item.value === currentStatus.value)?.label || '全部')
+
+/**
+ * 将订单状态码转换为中文文本
+ * @param {number} value - 订单状态码
+ * @returns {string} 状态中文文字
+ */
 const statusText = (value) => ['待付款', '已付款', '已发货', '已完成', '已取消'][value] || '未知'
+
+/**
+ * 将订单状态码转换为 CSS 类名
+ * @param {number} value - 订单状态码
+ * @returns {string} CSS 类名
+ */
 const statusClass = (value) => ['status-pending', 'status-paid', 'status-shipped', 'status-done', 'status-cancel'][value] || ''
 
+/**
+ * 加载订单列表（根据当前筛选状态和分页参数）
+ */
 const loadData = async () => {
   loading.value = true
   try {
@@ -138,6 +185,11 @@ const loadData = async () => {
   }
 }
 
+/**
+ * 取消订单
+ * 弹出确认框后调用 API，成功后刷新列表
+ * @param {object} order - 订单对象
+ */
 const doCancel = async (order) => {
   try {
     await ElMessageBox.confirm('确定取消此订单？', '提示', { type: 'warning' })
@@ -145,10 +197,15 @@ const doCancel = async (order) => {
     ElMessage.success('订单已取消')
     loadData()
   } catch (e) {
-    // cancelled
+    // 用户取消操作
   }
 }
 
+/**
+ * 模拟支付
+ * 弹出确认框（提示模拟支付，不会实际扣款），调用 API 后刷新列表
+ * @param {object} order - 订单对象
+ */
 const doPay = async (order) => {
   try {
     await ElMessageBox.confirm(`确认支付 ¥${order.totalAmount}？\n（模拟支付，不会实际扣款）`, '模拟支付', { type: 'info' })
@@ -156,16 +213,25 @@ const doPay = async (order) => {
     ElMessage.success('支付成功')
     loadData()
   } catch (e) {
-    // cancelled
+    // 用户取消操作
   }
 }
 
+/**
+ * 格式化时间戳为中文日期时间字符串
+ * @param {string|number} value - 时间戳
+ * @returns {string} 格式化后的日期时间
+ */
 const formatTime = (value) => (value ? new Date(value).toLocaleString('zh-CN') : '')
 
+/**
+ * 组件挂载后：加载订单列表
+ */
 onMounted(loadData)
 </script>
 
 <style scoped>
+/* ===== 页面整体布局 ===== */
 .page {
   min-height: 100vh;
   display: flex;
@@ -177,6 +243,7 @@ onMounted(loadData)
   padding-top: 28px;
 }
 
+/* ===== 顶部概览面板 ===== */
 .inner-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.34fr) minmax(300px, 0.66fr);
@@ -230,6 +297,7 @@ onMounted(loadData)
   letter-spacing: 0.06em;
 }
 
+/* 概览摘要行 */
 .hero-summary {
   display: flex;
   align-items: baseline;
@@ -250,6 +318,7 @@ onMounted(loadData)
   font-weight: 700;
 }
 
+/* ===== 状态标签切换栏 ===== */
 .status-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -275,15 +344,18 @@ onMounted(loadData)
   color: #fffaf2;
 }
 
+/* ===== 订单列表 ===== */
 .order-list {
   display: grid;
   gap: 18px;
 }
 
+/* 订单卡片 */
 .order-card {
   overflow: hidden;
 }
 
+/* 订单头部：编号 + 状态 */
 .order-card__header {
   display: flex;
   align-items: center;
@@ -306,26 +378,14 @@ onMounted(loadData)
   font-weight: 600;
 }
 
-.status-pending {
-  color: var(--color-gold);
-}
+/* 不同状态的颜色 */
+.status-pending { color: var(--color-gold); }
+.status-paid { color: var(--color-green); }
+.status-shipped { color: var(--color-green-soft); }
+.status-done { color: var(--color-wood); }
+.status-cancel { color: var(--color-red); }
 
-.status-paid {
-  color: var(--color-green);
-}
-
-.status-shipped {
-  color: var(--color-green-soft);
-}
-
-.status-done {
-  color: var(--color-wood);
-}
-
-.status-cancel {
-  color: var(--color-red);
-}
-
+/* 订单主体：封面图 + 摘要 + 金额 */
 .order-card__body {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr) 160px;
@@ -372,6 +432,7 @@ onMounted(loadData)
   text-align: right;
 }
 
+/* 订单操作按钮区 */
 .order-card__actions {
   display: flex;
   justify-content: flex-end;
@@ -379,6 +440,7 @@ onMounted(loadData)
   padding: 0 24px 24px;
 }
 
+/* ===== 空状态与引导链接 ===== */
 .empty-state {
   padding: 54px 32px;
   text-align: center;

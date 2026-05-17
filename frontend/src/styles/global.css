@@ -1,44 +1,75 @@
 /* ============================================
-   云茗茶馆 - 品牌化首页主题
+   云茗茶馆 - 品牌化全局样式主题
+   定义了整个应用的 CSS 变量、基础样式、
+   布局工具类和 Element Plus 组件覆盖样式
    ============================================ */
 
+/* ===== CSS 自定义属性（设计令牌） ===== */
 :root {
-  --color-paper: #f5f1e8;
-  --color-paper-soft: #f8f4ec;
-  --color-paper-deep: #ece4d4;
-  --color-paper-warm: #fbf7ef;
-  --color-ink: #2f2a24;
-  --color-ink-soft: #5b5b5b;
-  --color-ink-muted: #8b8479;
-  --color-green: #2f4f3e;
+  /* ---- 纸张/背景色系 ---- */
+  --color-paper: #f5f1e8; /* 主背景色：暖米色，仿宣纸 */
+  --color-paper-soft: #f8f4ec; /* 柔和背景 */
+  --color-paper-deep: #ece4d4; /* 深背景 */
+  --color-paper-warm: #fbf7ef; /* 暖色调背景 */
+
+  /* ---- 文字色系 ---- */
+  --color-ink: #2f2a24; /* 主文字色：深墨色 */
+  --color-ink-soft: #5b5b5b; /* 次文字色 */
+  --color-ink-muted: #8b8479; /* 弱化文字色 */
+
+  /* ---- 绿色系（茶叶主题色） ---- */
+  --color-green: #2f4f3e; /* 主绿色 */
   --color-green-soft: #6b8e6e;
   --color-green-deep: #22392d;
-  --color-wood: #5c4033;
+
+  /* ---- 木色系 ---- */
+  --color-wood: #5c4033; /* 主木色 */
   --color-wood-soft: #7a5a4c;
-  --color-red: #9f2d20;
+
+  /* ---- 红色系（强调色/印章色） ---- */
+  --color-red: #9f2d20; /* 印章红 */
   --color-red-soft: #b4493b;
+
+  /* ---- 金色系 ---- */
   --color-gold: #8c6b3f;
   --color-gold-soft: #b1946b;
+
+  /* ---- 边框色系 ---- */
   --color-border: #d8d2c4;
   --color-border-strong: #ccbca1;
+
+  /* ---- 表面/卡片色 ---- */
   --color-surface: rgba(255, 250, 242, 0.86);
   --color-surface-strong: rgba(255, 252, 246, 0.95);
   --color-surface-muted: rgba(255, 250, 242, 0.72);
+
+  /* ---- 阴影层级 ---- */
   --shadow-sm: 0 10px 24px rgba(47, 42, 36, 0.05);
   --shadow-md: 0 18px 42px rgba(47, 42, 36, 0.09);
   --shadow-lg: 0 28px 52px rgba(47, 42, 36, 0.13);
+
+  /* ---- 圆角 ---- */
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 28px;
-  --content-width: 1280px;
-  --nav-height: 76px;
-  --section-gap: 82px;
-  --transition-base: 180ms ease;
-  --hero-overlay: linear-gradient(90deg, rgba(24, 22, 19, 0.76), rgba(24, 22, 19, 0.34));
-  --font-display: "STSong", "Songti SC", "Noto Serif SC", serif;
-  --font-body: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
 
-  --el-color-primary: #2f4f3e;
+  /* ---- 布局 ---- */
+  --content-width: 1280px; /* 内容区最大宽度 */
+  --nav-height: 76px; /* 导航栏高度 */
+  --section-gap: 82px; /* 区块间距 */
+
+  /* ---- 动效 ---- */
+  --transition-base: 180ms ease; /* 基础过渡时间 */
+
+  /* ---- 首页 Hero 横幅渐变遮罩 ---- */
+  --hero-overlay: linear-gradient(90deg, rgba(24, 22, 19, 0.76), rgba(24, 22, 19, 0.34));
+
+  /* ---- 字体 ---- */
+  --font-display: "STSong", "Songti SC", "Noto Serif SC", serif; /* 展示字体：宋体/衬线 */
+  --font-body: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif; /* 正文字体：无衬线 */
+
+  /* ===== Element Plus 主题变量覆盖 ===== */
+  --el-color-primary: #2f4f3e; /* 主色：茶叶绿 */
   --el-color-primary-light-3: #486957;
   --el-color-primary-light-5: #6b8e6e;
   --el-color-primary-light-7: #8ea491;
@@ -46,8 +77,8 @@
   --el-color-primary-light-9: #dce5dd;
   --el-color-primary-dark-2: #22392d;
   --el-color-success: #486957;
-  --el-color-warning: #8c6b3f;
-  --el-color-danger: #9f2d20;
+  --el-color-warning: #8c6b3f; /* 警告色：金色 */
+  --el-color-danger: #9f2d20; /* 危险色：印章红 */
   --el-color-error: #9f2d20;
   --el-color-info: #7a5a4c;
   --el-bg-color: #f8f4ec;
@@ -62,18 +93,20 @@
   --el-fill-color-blank: #fffaf2;
 }
 
+/* ===== 全局重置 ===== */
 * {
-  box-sizing: border-box;
+  box-sizing: border-box; /* 盒模型：padding 和 border 包含在宽高内 */
 }
 
 html {
-  background: var(--color-paper);
+  background: var(--color-paper); /* 页面底色 */
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
-  color: var(--color-ink);
+  margin: 0; /* 清除默认边距 */
+  min-height: 100vh; /* 最小高度撑满屏幕 */
+  color: var(--color-ink); /* 全局文字颜色 */
+  /* 多层渐变背景：营造纸张质感 */
   background:
     radial-gradient(circle at top left, rgba(140, 107, 63, 0.07), transparent 28%),
     radial-gradient(circle at bottom right, rgba(47, 79, 62, 0.05), transparent 24%),
@@ -81,46 +114,53 @@ body {
     var(--color-paper);
   font-family: var(--font-body);
   line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased; /* macOS 字体平滑 */
+  text-rendering: optimizeLegibility; /* 优化文字渲染 */
 }
 
+/* body 背景纹理：细微网格和光斑，增强纸张质感 */
 body::before {
   content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
+  position: fixed; /* 固定定位，不随滚动 */
+  inset: 0; /* 填满整个视口 */
+  z-index: -1; /* 放在所有内容下面 */
+  pointer-events: none; /* 不阻挡鼠标交互 */
   background-image:
     linear-gradient(rgba(110, 92, 73, 0.014) 1px, transparent 1px),
     linear-gradient(90deg, rgba(110, 92, 73, 0.014) 1px, transparent 1px),
     radial-gradient(circle at 18% 20%, rgba(47, 79, 62, 0.032), transparent 18%),
     radial-gradient(circle at 82% 16%, rgba(159, 83, 24, 0.024), transparent 14%);
-  background-size: 30px 30px, 30px 30px, auto, auto;
+  background-size: 30px 30px, 30px 30px, auto, auto; /* 网格 30x30 */
   opacity: 0.78;
 }
 
+/* ===== 基础元素 ===== */
 a {
-  color: inherit;
-  text-decoration: none;
+  color: inherit; /* 继承父元素颜色 */
+  text-decoration: none; /* 去掉下划线 */
   transition: color var(--transition-base);
 }
 
 img {
-  display: block;
-  max-width: 100%;
+  display: block; /* 去除行内元素的底部空隙 */
+  max-width: 100%; /* 响应式：最大宽度 100% */
 }
 
+/* Vue 应用根容器 */
 #app {
   min-height: 100vh;
 }
 
+/* ===== 布局工具类 ===== */
+
+/* 内容容器：居中 + 最大宽度限制 */
 .container {
-  width: min(100%, var(--content-width));
-  margin: 0 auto;
-  padding: 0 24px;
+  width: min(100%, var(--content-width)); /* 取 100% 和最大宽度中较小的值 */
+  margin: 0 auto; /* 水平居中 */
+  padding: 0 24px; /* 左右内边距 */
 }
 
+/* 页面外壳：应用级的渐变背景 */
 .page-shell {
   min-height: 100vh;
   background:
@@ -128,6 +168,7 @@ img {
     linear-gradient(180deg, rgba(251, 247, 239, 0.72), rgba(243, 237, 226, 0.96) 78%, rgba(233, 225, 214, 0.98));
 }
 
+/* 纸质面板：带装饰边框的卡片容器 */
 .paper-panel {
   background: var(--color-surface);
   border: 1px solid rgba(204, 188, 161, 0.5);
@@ -136,6 +177,7 @@ img {
   position: relative;
 }
 
+/* 面板内装饰框 */
 .paper-panel::before {
   content: "";
   position: absolute;
@@ -145,18 +187,21 @@ img {
   pointer-events: none;
 }
 
+/* 桌面端区块间距 */
 .desktop-section {
   padding-top: var(--section-gap);
 }
 
+/* ===== 区块标题样式 ===== */
 .section-title {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 34px;
-  text-align: center;
+  text-align: center; /* 默认居中 */
 }
 
+/* 标题上方小标签 */
 .section-title .eyebrow {
   color: var(--color-red);
   font-size: 12px;
@@ -167,7 +212,7 @@ img {
 .section-title h2 {
   margin: 0;
   color: var(--color-ink);
-  font-family: var(--font-display);
+  font-family: var(--font-display); /* 宋体展示 */
   font-size: 48px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -175,7 +220,7 @@ img {
 }
 
 .section-title p {
-  width: min(100%, 620px);
+  width: min(100%, 620px); /* 描述文字有最大宽度限制 */
   margin: 0 auto;
   color: var(--color-ink-soft);
   font-size: 15px;
@@ -183,6 +228,7 @@ img {
   line-height: 1.85;
 }
 
+/* 左对齐变体 */
 .section-title.section-title-left {
   text-align: left;
 }
@@ -192,6 +238,7 @@ img {
   margin: 0;
 }
 
+/* ===== 印章徽章 ===== */
 .seal-badge {
   display: inline-flex;
   align-items: center;
@@ -200,13 +247,14 @@ img {
   min-height: 66px;
   padding: 10px;
   color: #fff7f1;
-  background: var(--color-red);
+  background: var(--color-red); /* 印章红色底 */
   border: 1px solid rgba(255, 248, 240, 0.38);
-  box-shadow: inset 0 0 0 1px rgba(255, 248, 240, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 240, 0.18); /* 内描边 */
   font-family: var(--font-display);
   letter-spacing: 0.2em;
 }
 
+/* ===== 木质风格按钮 ===== */
 .wood-button {
   display: inline-flex;
   align-items: center;
@@ -215,7 +263,7 @@ img {
   padding: 0 28px;
   border: 1px solid rgba(255, 248, 240, 0.72);
   color: #fffaf2;
-  background: rgba(255, 250, 242, 0.08);
+  background: rgba(255, 250, 242, 0.08); /* 半透明背景 */
   transition:
     color var(--transition-base),
     background var(--transition-base),
@@ -225,9 +273,10 @@ img {
 
 .wood-button:hover {
   background: rgba(255, 250, 242, 0.16);
-  transform: translateY(-1px);
+  transform: translateY(-1px); /* 悬停轻微上浮 */
 }
 
+/* 强调色按钮变体（红色） */
 .wood-button.is-accent {
   border-color: var(--color-red);
   background: var(--color-red);
@@ -238,6 +287,7 @@ img {
   border-color: var(--color-red-soft);
 }
 
+/* ===== 管理后台页面容器 ===== */
 .admin-page {
   min-height: calc(100vh - 112px);
   padding: 28px;
@@ -249,6 +299,7 @@ img {
   position: relative;
 }
 
+/* 管理页面内装饰边框 */
 .admin-page::before {
   content: "";
   position: absolute;
@@ -258,10 +309,11 @@ img {
   pointer-events: none;
 }
 
+/* ===== 页面标题区域 ===== */
 .page-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-between; /* 标题和操作按钮分居两侧 */
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -285,6 +337,7 @@ img {
   max-width: 720px;
 }
 
+/* 页眉小标签 */
 .page-header__eyebrow {
   display: inline-block;
   color: var(--color-red);
@@ -293,6 +346,7 @@ img {
   text-transform: uppercase;
 }
 
+/* 页面操作按钮区域 */
 .page-actions {
   display: flex;
   align-items: center;
@@ -300,10 +354,14 @@ img {
   flex-wrap: wrap;
 }
 
+/* ===== 管理后台辅助样式 ===== */
+
+/* 筛选下拉框最小宽度 */
 .admin-inline-filter {
   min-width: 220px;
 }
 
+/* 管理后台提示信息条 */
 .admin-section-note {
   margin: 0 0 18px;
   padding: 14px 18px;
@@ -315,6 +373,7 @@ img {
   line-height: 1.75;
 }
 
+/* 管理后台卡片表格容器 */
 .admin-card-table {
   padding: 14px;
   border-radius: 18px;
@@ -322,6 +381,7 @@ img {
   border: 1px solid rgba(204, 188, 161, 0.24);
 }
 
+/* 表格后的分页间距 */
 .admin-card-table + .pagination,
 .admin-card-table + .admin-pagination {
   margin-top: 18px;
@@ -331,11 +391,15 @@ img {
   margin-top: 18px;
 }
 
+/* 管理后台分页右对齐 */
 .admin-page .pagination {
   display: flex;
   justify-content: flex-end;
 }
 
+/* ===== Element Plus 组件样式覆盖 ===== */
+
+/* Tabs 选项卡 */
 .admin-page .el-tabs__header {
   margin-bottom: 18px;
 }
@@ -351,19 +415,22 @@ img {
 }
 
 .admin-page .el-tabs__item.is-active {
-  color: var(--color-green);
+  color: var(--color-green); /* 激活态绿色 */
 }
 
+/* Dialog 对话框 */
 .admin-page .el-dialog__body {
   padding-top: 18px;
 }
 
+/* 表单标签颜色 */
 .admin-page .el-form-item__label,
 .el-dialog .el-form-item__label {
   color: var(--color-wood);
   letter-spacing: 0.04em;
 }
 
+/* 表单控件宽度充满 */
 .admin-page .el-input-number,
 .admin-page .el-select,
 .admin-page .el-date-editor,
@@ -375,6 +442,7 @@ img {
   width: 100%;
 }
 
+/* 管理后台组件透明背景 */
 .admin-page .el-table,
 .admin-page .el-dialog,
 .admin-page .el-tabs__nav-wrap,
@@ -383,12 +451,14 @@ img {
   background: transparent;
 }
 
+/* ===== Element Plus 通用按钮覆盖 ===== */
 .el-button {
   border-radius: 10px;
   font-weight: 500;
   letter-spacing: 0.04em;
 }
 
+/* 主要按钮：绿色 */
 .el-button--primary {
   --el-button-bg-color: #2f4f3e;
   --el-button-border-color: #2f4f3e;
@@ -398,6 +468,7 @@ img {
   --el-button-active-border-color: #22392d;
 }
 
+/* 危险按钮：印章红 */
 .el-button--danger {
   --el-button-bg-color: #9f5318;
   --el-button-border-color: #9f5318;
@@ -406,6 +477,7 @@ img {
   --el-button-active-bg-color: #844112;
 }
 
+/* 警告按钮：金色 */
 .el-button--warning {
   --el-button-bg-color: #8c6b3f;
   --el-button-border-color: #8c6b3f;
@@ -413,26 +485,30 @@ img {
   --el-button-hover-border-color: #a68358;
 }
 
+/* ===== Element Plus 输入框覆盖 ===== */
 .el-input__wrapper,
 .el-textarea__inner,
 .el-select__wrapper {
   border-radius: 10px;
   background: rgba(255, 250, 242, 0.95);
-  box-shadow: 0 0 0 1px var(--color-border) inset;
+  box-shadow: 0 0 0 1px var(--color-border) inset; /* 用 box-shadow 模拟边框 */
 }
 
+/* 悬停时变为金色边框 */
 .el-input__wrapper:hover,
 .el-textarea__inner:hover,
 .el-select__wrapper:hover {
   box-shadow: 0 0 0 1px var(--color-gold-soft) inset;
 }
 
+/* 聚焦时变为绿色边框 */
 .el-input.is-focus .el-input__wrapper,
 .el-textarea__inner:focus,
 .el-select__wrapper.is-focused {
   box-shadow: 0 0 0 1px var(--color-green) inset;
 }
 
+/* 圆角统一 */
 .el-card,
 .el-dialog,
 .el-table,
@@ -442,52 +518,62 @@ img {
   border-radius: 10px;
 }
 
+/* ===== Element Plus 表格覆盖 ===== */
 .el-table {
   --el-table-border-color: var(--color-border);
-  --el-table-header-bg-color: #f2ecdf;
+  --el-table-header-bg-color: #f2ecdf; /* 表头背景 */
   --el-table-tr-bg-color: rgba(255, 250, 242, 0.94);
-  --el-table-row-hover-bg-color: #f4eee2;
+  --el-table-row-hover-bg-color: #f4eee2; /* 悬停行背景 */
 }
 
+/* 表头文字样式 */
 .el-table th.el-table__cell {
   color: var(--color-wood);
   font-weight: 600;
   letter-spacing: 0.08em;
 }
 
+/* ===== Element Plus 分页覆盖 ===== */
 .el-pagination .el-pager li.is-active {
   color: #fffaf2;
-  background: var(--color-green);
+  background: var(--color-green); /* 当前页按钮绿色 */
 }
 
+/* 菜单去掉右边框 */
 .el-menu {
   border-right: none;
 }
 
+/* Tag 标签胶囊形状 */
 .el-tag {
   border-radius: 999px;
   padding-inline: 10px;
 }
 
+/* 管理后台表格额外样式 */
 .admin-page .el-table {
   border-radius: 14px;
-  overflow: hidden;
+  overflow: hidden; /* 配合圆角裁剪内容 */
 }
 
+/* 表格内操作按钮间距 */
 .admin-page .el-table .el-button + .el-button {
   margin-left: 8px;
 }
 
+/* ===== 滚动条样式 ===== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 8px; /* 纵向滚动条宽度 */
+  height: 8px; /* 横向滚动条高度 */
 }
 
+/* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  background: rgba(122, 90, 76, 0.35);
-  border-radius: 999px;
+  background: rgba(122, 90, 76, 0.35); /* 木色半透明 */
+  border-radius: 999px; /* 胶囊形 */
 }
 
+/* 滚动条轨道 */
 ::-webkit-scrollbar-track {
   background: rgba(245, 241, 232, 0.7);
 }

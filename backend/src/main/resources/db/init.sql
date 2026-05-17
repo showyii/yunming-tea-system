@@ -1,11 +1,16 @@
 -- =============================================
 -- 云茗茶馆预约与商城系统 - 数据库初始化脚本
+-- 功能：创建数据库、建表、插入初始数据
+-- 使用方法：在 MySQL 中执行 source init.sql 或在 Navicat 等工具中直接运行
+-- 要求：MySQL 5.7+，推荐 MySQL 8.0
 -- =============================================
 
+-- 如果 yunming_tea 数据库不存在则创建
 CREATE DATABASE IF NOT EXISTS yunming_tea
-    DEFAULT CHARACTER SET utf8mb4
-    DEFAULT COLLATE utf8mb4_unicode_ci;
+    DEFAULT CHARACTER SET utf8mb4 -- 使用 utf8mb4 字符集，支持 emoji 和生僻字
+    DEFAULT COLLATE utf8mb4_unicode_ci; -- 使用 unicode_ci 排序规则，大小写不敏感
 
+-- 切换到 yunming_tea 数据库
 USE yunming_tea;
 
 -- ==================== 用户模块 ====================

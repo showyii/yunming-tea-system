@@ -1,15 +1,24 @@
 <!DOCTYPE html>
+<!-- 设置页面语言为简体中文 -->
 <html lang="zh-CN">
   <head>
+    <!-- 声明字符编码为 UTF-8，支持中文显示 -->
     <meta charset="UTF-8" />
+    <!-- 设置视口：宽度等于设备宽度，初始缩放比例为 1.0，适配移动端 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 网页标题：显示在浏览器标签页上 -->
     <title>云茗茶馆</title>
+    <!-- 预连接 Google Fonts 域名，加快字体资源加载速度 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 引入 Google Fonts：Noto Serif SC（思源宋体）和 ZCOOL XiaoWei（站酷小薇体） -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- Vue 应用挂载点，Vue 会将整个应用渲染到此 div 内部 -->
     <div id="app"></div>
+    <!-- 引入 Vue 应用的入口 JavaScript 模块 -->
+    <!-- type="module" 表示使用 ES Module 方式加载，支持 import/export -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -1,14 +1,27 @@
+<!--
+  购物车页（Cart.vue）
+  云茗茶馆的购物车页面，用于管理待结算茶品并完成下单。
+  页面功能：
+  - 顶部概览区：茶品件数、应付金额、继续浏览入口
+  - 待结算茶单列表：每项支持修改数量、删除、查看详情
+  - 结算面板：汇总信息 + 去结算按钮
+  - 下单弹窗：收货人、手机号、地址、备注
+  - 空购物车提示
+-->
 <template>
   <div class="page">
+    <!-- 页面顶部导航栏 -->
     <NavBar />
 
     <div class="container cart-page" v-loading="loading">
+      <!-- ========== 顶部：概览区 ========== -->
       <section class="inner-hero paper-panel">
         <div class="inner-hero__copy">
           <h1>先把想带走的茶暂时放在这里，再慢慢核对这一单的分量</h1>
           <p>选好的茶先收进这一页，数量、价格和小计都会一并列清，方便你下单前再从容看一遍。</p>
         </div>
 
+        <!-- 右侧结算速览 -->
         <div class="inner-hero__aside">
           <strong>结算速览</strong>
           <div class="hero-metrics">
@@ -26,20 +39,26 @@
         </div>
       </section>
 
+      <!-- ========== 待结算茶单区 ========== -->
       <section class="desktop-section">
         <div class="section-title section-title-left">
           <h2>待结算茶单</h2>
           <p>想增减数量、删去暂时不需要的茶，或直接准备下单，都可以在这里顺手完成，不必来回切换。</p>
         </div>
 
+        <!-- 有商品时：双列布局（茶单 + 结算面板） -->
         <div v-if="items.length > 0" class="cart-layout">
+          <!-- 茶单列表 -->
           <div class="cart-list">
+            <!-- 单个购物车条目卡片 -->
             <article v-for="item in items" :key="item.id" class="cart-card paper-panel">
+              <!-- 商品图片：点击跳转详情 -->
               <button class="cart-card__image" @click="$router.push(`/products/${item.productId}`)">
                 <img :src="resolveProductImage(item, item.productImage)" :alt="item.productName">
               </button>
 
               <div class="cart-card__body">
+                <!-- 商品名称 + 单价、库存 -->
                 <div class="cart-card__copy">
                   <h3 @click="$router.push(`/products/${item.productId}`)">{{ item.productName }}</h3>
                   <div class="cart-card__meta">
@@ -48,6 +67,7 @@
                   </div>
                 </div>
 
+                <!-- 操作区：数量修改 + 小计 + 删除 -->
                 <div class="cart-card__actions">
                   <div class="qty-editor">
                     <span>数量</span>
@@ -69,6 +89,7 @@
             </article>
           </div>
 
+          <!-- 结算面板（侧栏，粘性定位） -->
           <aside class="checkout-panel paper-panel">
             <h3>本次结算</h3>
             <div class="summary-row">
@@ -88,6 +109,7 @@
           </aside>
         </div>
 
+        <!-- 空购物车提示 -->
         <div v-else-if="!loading" class="empty-state paper-panel">
           <h3>购物车还是空的</h3>
           <p>先去挑几款适合日常品饮、待客或礼赠的茶，再统一回到这里慢慢整理订单。</p>
@@ -95,21 +117,27 @@
         </div>
       </section>
 
+      <!-- ========== 下单确认弹窗 ========== -->
       <el-dialog v-model="showSubmit" title="确认订单信息" width="520px">
         <el-form ref="formRef" :model="orderForm" :rules="rules" label-width="84px">
+          <!-- 收货人姓名 -->
           <el-form-item label="收货人" prop="receiverName">
             <el-input v-model="orderForm.receiverName" placeholder="请输入收货人姓名" />
           </el-form-item>
+          <!-- 收货人手机号 -->
           <el-form-item label="手机号" prop="receiverPhone">
             <el-input v-model="orderForm.receiverPhone" placeholder="请输入收货人手机号" />
           </el-form-item>
+          <!-- 收货地址 -->
           <el-form-item label="收货地址" prop="receiverAddress">
             <el-input v-model="orderForm.receiverAddress" placeholder="请输入收货地址" />
           </el-form-item>
+          <!-- 备注（选填） -->
           <el-form-item label="备注">
             <el-input v-model="orderForm.remark" type="textarea" :rows="2" placeholder="选填" />
           </el-form-item>
         </el-form>
+        <!-- 弹窗底部汇总信息 -->
         <div class="dialog-summary">
           共 {{ totalQuantity }} 件商品，应付 <span>¥{{ total.toFixed(2) }}</span>
         </div>
@@ -120,11 +148,16 @@
       </el-dialog>
     </div>
 
+    <!-- 页面底部页脚栏 -->
     <FooterBar />
   </div>
 </template>
 
 <script setup>
+/**
+ * 购物车页脚本逻辑
+ * 负责：加载购物车列表、修改数量、删除商品、下单提交
+ */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -134,29 +167,38 @@ import { cartApi } from '@/api/cart'
 import { orderApi } from '@/api/order'
 import { resolveProductImage } from '@/utils/localImage'
 
+// ===== 路由与表单引用 =====
 const router = useRouter()
-const items = ref([])
-const loading = ref(false)
-const showSubmit = ref(false)
-const submitting = ref(false)
-const formRef = ref(null)
+const items = ref([])             // 购物车商品列表
+const loading = ref(false)        // 页面加载状态
+const showSubmit = ref(false)     // 下单弹窗显示状态
+const submitting = ref(false)     // 下单按钮加载状态
+const formRef = ref(null)         // 下单表单引用
 
+// ===== 下单表单数据（响应式对象） =====
 const orderForm = reactive({
-  receiverName: '',
-  receiverPhone: '',
-  receiverAddress: '',
-  remark: ''
+  receiverName: '',       // 收货人姓名
+  receiverPhone: '',      // 收货人手机号
+  receiverAddress: '',    // 收货地址
+  remark: ''              // 备注（选填）
 })
 
+// ===== 下单表单校验规则 =====
 const rules = {
   receiverName: [{ required: true, message: '请输入收货人', trigger: 'blur' }],
   receiverPhone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
   receiverAddress: [{ required: true, message: '请输入地址', trigger: 'blur' }]
 }
 
+// ===== 计算属性 =====
+// 应付总额 = 所有商品 (单价 × 数量) 之和
 const total = computed(() => items.value.reduce((sum, item) => sum + item.price * item.quantity, 0))
+// 商品总件数 = 所有商品数量之和
 const totalQuantity = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
 
+/**
+ * 加载购物车数据
+ */
 const loadData = async () => {
   loading.value = true
   try {
@@ -166,14 +208,24 @@ const loadData = async () => {
   }
 }
 
+/**
+ * 更新商品数量
+ * 修改后调用 API 同步，失败时重新加载列表以恢复原值
+ * @param {object} item - 购物车条目对象
+ */
 const updateQty = async (item) => {
   try {
     await cartApi.update({ id: item.id, quantity: item.quantity })
   } catch (e) {
-    loadData()
+    loadData()  // 更新失败时重新加载以恢复原值
   }
 }
 
+/**
+ * 删除购物车条目
+ * 弹出确认框后调用 API，成功后刷新列表
+ * @param {object} item - 购物车条目对象
+ */
 const removeItem = async (item) => {
   try {
     await ElMessageBox.confirm('确定移除此商品？', '提示', { type: 'warning' })
@@ -181,10 +233,14 @@ const removeItem = async (item) => {
     ElMessage.success('已移除')
     loadData()
   } catch (e) {
-    // cancelled
+    // 用户取消操作或请求失败
   }
 }
 
+/**
+ * 提交订单
+ * 校验表单后调用下单 API，成功后跳转到订单详情页
+ */
 const doSubmit = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
@@ -200,10 +256,14 @@ const doSubmit = async () => {
   }
 }
 
+/**
+ * 组件挂载后：加载购物车数据
+ */
 onMounted(loadData)
 </script>
 
 <style scoped>
+/* ===== 页面整体布局 ===== */
 .page {
   min-height: 100vh;
   display: flex;
@@ -215,6 +275,7 @@ onMounted(loadData)
   padding-top: 28px;
 }
 
+/* ===== 顶部概览面板 ===== */
 .inner-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.34fr) minmax(320px, 0.66fr);
@@ -271,6 +332,7 @@ onMounted(loadData)
   letter-spacing: 0.06em;
 }
 
+/* 概览指标行 */
 .hero-metrics {
   display: grid;
   gap: 12px;
@@ -309,6 +371,7 @@ onMounted(loadData)
   letter-spacing: 0.16em;
 }
 
+/* ===== 茶单 + 结算面板双列布局 ===== */
 .cart-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.7fr);
@@ -321,6 +384,7 @@ onMounted(loadData)
   gap: 18px;
 }
 
+/* 购物车条目卡片：图片左 + 信息右 */
 .cart-card {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -368,6 +432,7 @@ onMounted(loadData)
   font-size: 13px;
 }
 
+/* 操作区：数量 + 小计 + 删除 */
 .cart-card__actions {
   display: flex;
   align-items: flex-end;
@@ -391,6 +456,7 @@ onMounted(loadData)
   font-weight: 700;
 }
 
+/* ===== 结算面板（粘性定位，滚动时固定在顶部） ===== */
 .checkout-panel {
   position: sticky;
   top: 110px;
@@ -405,12 +471,14 @@ onMounted(loadData)
   margin-top: 20px;
 }
 
+/* ===== 下单弹窗 ===== */
 .dialog-summary {
   padding-top: 12px;
   text-align: right;
   color: var(--color-ink-soft);
 }
 
+/* ===== 空状态提示 ===== */
 .empty-state {
   padding: 54px 32px;
   text-align: center;

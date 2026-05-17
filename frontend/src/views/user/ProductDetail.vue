@@ -1,8 +1,21 @@
+<!--
+  茶品详情页（ProductDetail.vue）
+  云茗茶馆的单品茶品详情页面，展示完整的产品信息并支持购买操作。
+  页面功能：
+  - 面包屑导航
+  - 产品信息区：分类标签、名称、价格、库存、销量
+  - 图片画廊：主图 + 缩略图切换
+  - 购买区：数量选择、加入购物车、去购物车
+  - 收藏功能（登录后可用）
+  - 详情标签页：商品描述 / 茶友评价（含评价提交和分页）
+-->
 <template>
   <div class="page">
+    <!-- 页面顶部导航栏 -->
     <NavBar />
 
     <div class="container detail-page" v-loading="loading">
+      <!-- ========== 面包屑导航 ========== -->
       <div class="breadcrumb">
         <router-link to="/">首页</router-link>
         <span>/</span>
@@ -11,29 +24,37 @@
         <span>{{ product.name }}</span>
       </div>
 
+      <!-- ========== 产品详情主区域（左右双列） ========== -->
       <section class="detail-hero paper-panel" v-if="product.id">
+        <!-- 左侧：产品信息 -->
         <div class="detail-hero__copy">
+          <!-- 分类标签 -->
           <span v-if="product.categoryName" class="detail-hero__eyebrow">{{ product.categoryName }}</span>
           <h1>{{ product.name }}</h1>
           <p>{{ product.subtitle || '馆内甄选茶品，适合日常品饮、待客茶席与礼赠场景。' }}</p>
 
+          <!-- 信息标签：热销 / 新品 / 分类 -->
           <div class="detail-hero__tags">
             <span v-if="product.isHot" class="info-tag hot">热销</span>
             <span v-if="product.isNew" class="info-tag new">新品</span>
             <span class="info-tag cat">{{ product.categoryName || '茶品详情' }}</span>
           </div>
 
+          <!-- 价格区：当前价格 + 原价（划线） -->
           <div class="detail-hero__price">
             <span class="price-current">¥{{ product.price }}</span>
             <span v-if="product.originalPrice" class="price-original">¥{{ product.originalPrice }}</span>
           </div>
 
+          <!-- 库存与销量信息 -->
           <div class="detail-hero__meta">
             <div><strong>库存</strong><span>{{ product.stock }}</span></div>
             <div><strong>销量</strong><span>{{ product.sales }}</span></div>
           </div>
 
+          <!-- 购买操作区 -->
           <div class="detail-purchase paper-subpanel">
+            <!-- 数量选择器 -->
             <div class="detail-purchase__row">
               <span>选择数量</span>
               <el-input-number
@@ -44,9 +65,11 @@
                 :disabled="product.stock < 1"
               />
             </div>
+            <!-- 库存提示 -->
             <p class="detail-purchase__tip">
               {{ product.stock > 0 ? `当前库存 ${product.stock} 件，可先加入购物车再统一下单。` : '当前商品库存不足，暂时无法加入购物车。' }}
             </p>
+            <!-- 操作按钮：加入购物车 / 去购物车 -->
             <div class="detail-purchase__actions">
               <el-button
                 type="primary"
@@ -61,6 +84,7 @@
             </div>
           </div>
 
+          <!-- 收藏按钮 -->
           <div class="detail-hero__actions">
             <el-button type="danger" size="large" @click="toggleFavorite">
               <el-icon><Star /></el-icon>
@@ -69,10 +93,12 @@
           </div>
         </div>
 
+        <!-- 右侧：图片画廊（主图 + 缩略图列表） -->
         <div class="detail-hero__gallery">
           <div class="main-image">
             <img :src="currentImage || resolveProductImage(product, product.mainImage)" :alt="product.name">
           </div>
+          <!-- 缩略图列表：多于1张时显示 -->
           <div class="thumb-list" v-if="detailImages.length > 1">
             <button
               v-for="(img, idx) in detailImages"
@@ -87,15 +113,20 @@
         </div>
       </section>
 
+      <!-- ========== 详情标签页区 ========== -->
       <section class="detail-tabs paper-panel" v-if="product.id">
+        <!-- 标签页头部切换按钮 -->
         <div class="tab-headers">
           <button :class="{ active: tab === 'desc' }" @click="tab = 'desc'">商品详情</button>
           <button :class="{ active: tab === 'comments' }" @click="tab = 'comments'">茶友评价（{{ commentTotal }}）</button>
         </div>
 
+        <!-- 商品描述标签页 -->
         <div class="tab-body" v-show="tab === 'desc'">
           <div class="desc-layout">
+            <!-- 描述内容（富文本渲染） -->
             <div class="desc-content" v-html="product.description || '暂无描述'"></div>
+            <!-- 品饮提示侧栏 -->
             <aside class="desc-aside paper-subpanel">
               <strong>品饮提示</strong>
               <p>若你已经大致有了偏好，不妨结合价格、销量与风味再细看一遍；若还想多比较几款，也可以回到茶单继续慢慢挑。</p>
@@ -104,7 +135,9 @@
           </div>
         </div>
 
+        <!-- 茶友评价标签页 -->
         <div class="tab-body" v-show="tab === 'comments'">
+          <!-- 评价提交表单：仅登录用户可见 -->
           <div class="comment-form paper-subpanel" v-if="isLoggedIn">
             <el-input v-model="newComment" type="textarea" :rows="3" placeholder="写下你对这款茶的品鉴感受..." />
             <div class="comment-form-bottom">
@@ -112,27 +145,34 @@
               <el-button type="primary" @click="submitComment" :loading="submitting">发表评价</el-button>
             </div>
           </div>
+          <!-- 未登录提示 -->
           <div v-else class="comment-login-tip paper-subpanel">
             <router-link to="/login">登录</router-link>后即可发表评价
           </div>
 
+          <!-- 评价列表 -->
           <div class="comment-list" v-loading="commentLoading">
             <article v-for="c in comments" :key="c.id" class="comment-item paper-subpanel">
+              <!-- 用户头像（取用户名首字） -->
               <div class="comment-avatar">{{ c.username?.charAt(0) || '茶' }}</div>
               <div class="comment-body">
                 <div class="comment-header">
                   <span class="comment-user">{{ c.username }}</span>
+                  <!-- 评分（只读模式） -->
                   <el-rate :model-value="c.rating" disabled size="small" />
                   <span class="comment-time">{{ formatTime(c.createTime) }}</span>
                 </div>
                 <p class="comment-text">{{ c.content }}</p>
               </div>
             </article>
+            <!-- 评价加载失败提示 -->
             <div v-if="!commentLoading && commentLoadFailed" class="empty paper-subpanel">
               评价内容暂时加载失败，你可以稍后再看，商品详情与购买流程不受影响。
             </div>
+            <!-- 暂无评价提示 -->
             <div v-else-if="!commentLoading && comments.length === 0" class="empty paper-subpanel">暂无评价，欢迎首评</div>
           </div>
+          <!-- 评价分页 -->
           <div class="pagination" v-if="commentTotal > commentSize">
             <el-pagination
               background
@@ -147,11 +187,16 @@
       </section>
     </div>
 
+    <!-- 页面底部页脚栏 -->
     <FooterBar />
   </div>
 </template>
 
 <script setup>
+/**
+ * 茶品详情页脚本逻辑
+ * 负责：加载产品详情、图片画廊切换、加入购物车、收藏切换、评价列表与提交
+ */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -161,41 +206,60 @@ import { cartApi } from '@/api/cart'
 import { commentApi, favoriteApi, productApi } from '@/api/product'
 import { resolveProductGallery, resolveProductImage } from '@/utils/localImage'
 
+// ===== 路由实例 =====
 const route = useRoute()
 const router = useRouter()
-const product = ref({})
-const loading = ref(false)
-const currentImage = ref('')
-const tab = ref('desc')
-const newComment = ref('')
-const newRating = ref(5)
-const submitting = ref(false)
-const comments = ref([])
-const commentLoading = ref(false)
-const commentPage = ref(1)
-const commentSize = ref(10)
-const commentTotal = ref(0)
-const commentLoadFailed = ref(false)
-const isLoggedIn = !!localStorage.getItem('token')
-const detailImages = ref([])
-const purchaseQuantity = ref(1)
-const addingToCart = ref(false)
-const hasAddedToCart = ref(false)
+
+// ===== 产品相关响应式变量 =====
+const product = ref({})           // 产品详情对象
+const loading = ref(false)        // 页面加载状态
+const currentImage = ref('')      // 当前显示的主图 URL
+const detailImages = ref([])      // 产品图片画廊列表
+const purchaseQuantity = ref(1)   // 购买数量（默认为1）
+const addingToCart = ref(false)   // 加入购物车按钮加载状态
+const hasAddedToCart = ref(false) // 是否已加入过购物车（控制"去购物车"按钮启用）
+
+// ===== 最大可购买数量（根据库存动态计算，最少为1） =====
 const maxPurchaseQuantity = computed(() => Math.max(1, Number(product.value.stock) || 1))
 
+// ===== 评价相关响应式变量 =====
+const tab = ref('desc')           // 当前激活的标签页：desc（描述）或 comments（评价）
+const newComment = ref('')        // 新评价内容
+const newRating = ref(5)          // 新评价评分（默认5星）
+const submitting = ref(false)     // 评价提交加载状态
+const comments = ref([])          // 评价列表
+const commentLoading = ref(false) // 评价列表加载状态
+const commentPage = ref(1)        // 评价当前页码
+const commentSize = ref(10)       // 评价每页条数
+const commentTotal = ref(0)       // 评价总数
+const commentLoadFailed = ref(false) // 评价加载是否失败
+
+// ===== 用户登录状态检查 =====
+const isLoggedIn = !!localStorage.getItem('token')
+
+/**
+ * 加载产品详情
+ * 获取产品全部信息、图片画廊，重置购买状态
+ */
 const loadDetail = async () => {
   loading.value = true
   try {
     product.value = await productApi.getDetail(route.params.id)
+    // 解析产品图片列表（包括主图和详情图）
     detailImages.value = resolveProductGallery(product.value)
+    // 设置主图为解析后的首张图片
     currentImage.value = resolveProductImage(product.value, product.value.mainImage)
     purchaseQuantity.value = product.value.stock > 0 ? 1 : 1
-    hasAddedToCart.value = false
+    hasAddedToCart.value = false  // 每次重新进入页面时重置
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * 加载评价列表（带分页）
+ * 支持分页参数，失败时标记 loadFailed 状态
+ */
 const loadComments = async () => {
   commentLoading.value = true
   commentLoadFailed.value = false
@@ -206,12 +270,16 @@ const loadComments = async () => {
   } catch (error) {
     comments.value = []
     commentTotal.value = 0
-    commentLoadFailed.value = true
+    commentLoadFailed.value = true  // 标记加载失败，显示友好提示
   } finally {
     commentLoading.value = false
   }
 }
 
+/**
+ * 切换收藏状态
+ * 登录检查后，根据当前收藏状态执行添加或取消操作
+ */
 const toggleFavorite = async () => {
   if (!isLoggedIn) {
     ElMessage.warning('请先登录')
@@ -228,10 +296,14 @@ const toggleFavorite = async () => {
       ElMessage.success('收藏成功')
     }
   } catch (e) {
-    // handled by interceptor
+    // 请求拦截器已统一处理错误提示
   }
 }
 
+/**
+ * 提交评价
+ * 校验内容非空后，调用 API 提交并刷新评价列表
+ */
 const submitComment = async () => {
   if (!newComment.value.trim()) {
     ElMessage.warning('请输入评价内容')
@@ -241,15 +313,21 @@ const submitComment = async () => {
   try {
     await commentApi.add({ productId: Number(route.params.id), content: newComment.value, rating: newRating.value })
     ElMessage.success('评价发表成功')
+    // 重置表单
     newComment.value = ''
     newRating.value = 5
     commentPage.value = 1
+    // 刷新评价列表
     loadComments()
   } finally {
     submitting.value = false
   }
 }
 
+/**
+ * 加入购物车
+ * 登录检查 + 库存检查后，调用 API 添加商品
+ */
 const addToCart = async () => {
   if (!isLoggedIn) {
     ElMessage.warning('请先登录后再加入购物车')
@@ -274,6 +352,9 @@ const addToCart = async () => {
   }
 }
 
+/**
+ * 跳转到购物车页面
+ */
 const goToCart = () => {
   if (!isLoggedIn) {
     router.push('/login')
@@ -282,11 +363,19 @@ const goToCart = () => {
   router.push('/cart')
 }
 
+/**
+ * 格式化时间戳为中文日期字符串
+ * @param {string|number} t - 时间戳
+ * @returns {string} 格式化后的日期字符串
+ */
 const formatTime = (t) => {
   if (!t) return ''
   return new Date(t).toLocaleDateString('zh-CN')
 }
 
+/**
+ * 组件挂载后：加载产品详情和评价列表
+ */
 onMounted(() => {
   loadDetail()
   loadComments()
@@ -294,6 +383,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ===== 页面整体布局 ===== */
 .page {
   min-height: 100vh;
   display: flex;
@@ -305,6 +395,7 @@ onMounted(() => {
   padding-top: 28px;
 }
 
+/* ===== 面包屑导航 ===== */
 .breadcrumb {
   display: flex;
   gap: 8px;
@@ -313,6 +404,7 @@ onMounted(() => {
   font-size: 13px;
 }
 
+/* ===== 产品详情主区域（左右双列） ===== */
 .detail-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.06fr) minmax(420px, 0.94fr);
@@ -321,6 +413,7 @@ onMounted(() => {
   margin-bottom: 28px;
 }
 
+/* 分类标签 */
 .detail-hero__eyebrow {
   color: var(--color-red);
   font-size: 12px;
@@ -345,6 +438,7 @@ onMounted(() => {
   line-height: 1.9;
 }
 
+/* 信息标签区 */
 .detail-hero__tags {
   display: flex;
   gap: 8px;
@@ -358,18 +452,11 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.info-tag.hot {
-  background: rgba(159, 83, 24, 0.94);
-}
+.info-tag.hot { background: rgba(159, 83, 24, 0.94); }
+.info-tag.new { background: rgba(47, 79, 62, 0.92); }
+.info-tag.cat { background: rgba(92, 64, 51, 0.9); }
 
-.info-tag.new {
-  background: rgba(47, 79, 62, 0.92);
-}
-
-.info-tag.cat {
-  background: rgba(92, 64, 51, 0.9);
-}
-
+/* 价格区 */
 .detail-hero__price {
   display: flex;
   align-items: baseline;
@@ -388,6 +475,7 @@ onMounted(() => {
   text-decoration: line-through;
 }
 
+/* 库存/销量信息 */
 .detail-hero__meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -417,6 +505,7 @@ onMounted(() => {
   font-size: 18px;
 }
 
+/* 购买操作区 */
 .detail-purchase {
   margin-bottom: 24px;
 }
@@ -448,6 +537,7 @@ onMounted(() => {
   margin-top: 16px;
 }
 
+/* ===== 图片画廊 ===== */
 .main-image {
   overflow: hidden;
   background: #ece0cd;
@@ -460,6 +550,7 @@ onMounted(() => {
   object-fit: cover;
 }
 
+/* 缩略图列表 */
 .thumb-list {
   display: flex;
   gap: 10px;
@@ -477,6 +568,7 @@ onMounted(() => {
   background: #ece0cd;
 }
 
+/* 选中的缩略图使用红色边框标识 */
 .thumb.active {
   border-color: var(--color-red);
 }
@@ -487,10 +579,12 @@ onMounted(() => {
   object-fit: cover;
 }
 
+/* ===== 详情标签页区 ===== */
 .detail-tabs {
   padding: 26px;
 }
 
+/* 标签页头部切换按钮 */
 .tab-headers {
   display: flex;
   gap: 12px;
@@ -506,12 +600,14 @@ onMounted(() => {
   cursor: pointer;
 }
 
+/* 激活的标签页按钮 */
 .tab-headers button.active {
   background: var(--color-green);
   border-color: var(--color-green);
   color: #fffaf2;
 }
 
+/* 描述内容 + 侧栏布局 */
 .desc-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -552,6 +648,7 @@ onMounted(() => {
   letter-spacing: 0.14em;
 }
 
+/* ===== 评价表单 ===== */
 .comment-form-bottom {
   display: flex;
   align-items: center;
@@ -559,6 +656,7 @@ onMounted(() => {
   margin-top: 12px;
 }
 
+/* ===== 评价列表 ===== */
 .comment-list {
   margin-top: 16px;
 }
@@ -569,6 +667,7 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
+/* 用户头像圆圈 */
 .comment-avatar {
   display: inline-flex;
   align-items: center;
@@ -608,6 +707,7 @@ onMounted(() => {
   line-height: 1.75;
 }
 
+/* 登录提示与空状态 */
 .comment-login-tip,
 .empty {
   text-align: center;

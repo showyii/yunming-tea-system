@@ -1,8 +1,20 @@
+<!--
+  首页（Home.vue）
+  云茗茶馆的用户端首页，是整个平台的入口页面。
+  页面功能：
+  - 顶部展示品牌轮播图（hero stage），传达云茗的品牌理念
+  - 六大茶类快捷入口，让用户快速按茶类浏览
+  - 精选茶品展示区（热销、当季上新、馆主推荐）
+  - 底部品牌收尾区，引导用户前往包间预约和茶事活动
+-->
 <template>
   <div class="home-page">
+    <!-- 页面顶部导航栏 -->
     <NavBar />
 
+    <!-- ========== 主视觉轮播区（Hero Stage） ========== -->
     <section class="hero-stage">
+      <!-- 轮播图片层 -->
       <div class="hero-stage__media">
         <div
           v-for="(slide, index) in heroSlides"
@@ -13,9 +25,12 @@
           <img :src="slide.image" :alt="slide.name">
         </div>
       </div>
+      <!-- 半透明遮罩层，确保文字在图片上可读 -->
       <div class="hero-stage__veil"></div>
+      <!-- 轮播文案区域：标题、描述、行动按钮和注释 -->
       <div class="container hero-layout">
         <div class="hero-copy">
+          <!-- 小标题（kicker），当前未启用 -->
           <span v-if="activeHeroSlide.kicker" class="hero-kicker">{{ activeHeroSlide.kicker }}</span>
           <h1>{{ activeHeroSlide.title }}</h1>
           <p>{{ activeHeroSlide.description }}</p>
@@ -23,12 +38,14 @@
             <router-link to="/products" class="wood-button is-accent">浏览全部茶品</router-link>
             <router-link to="/rooms" class="wood-button">预约馆内雅间</router-link>
           </div>
+          <!-- 轮播文案注释行 -->
           <div class="hero-notes">
             <span v-for="note in activeHeroSlide.notes" :key="note">{{ note }}</span>
           </div>
         </div>
       </div>
 
+      <!-- 轮播指示器（圆点导航） -->
       <div class="hero-carousel-dots">
         <button
           v-for="(slide, index) in heroSlides"
@@ -42,12 +59,14 @@
       </div>
     </section>
 
+    <!-- ========== 六大茶类快捷入口区 ========== -->
     <section class="container desktop-section">
       <div class="section-title">
         <h2>六大茶类快捷入口</h2>
         <p>如果还想先理解差异，再慢慢做决定，可以进入完整分类导购页。</p>
       </div>
 
+      <!-- 茶类展示组件，以快捷方式呈现六类茶 -->
       <TeaCategoryShowcase
         :categories="categories"
         :loading="catLoading"
@@ -55,6 +74,7 @@
         link-text="快速进入该类茶品"
       />
 
+      <!-- 分类导购引导卡片：提示用户可以进入完整分类页 -->
       <div class="category-shortcut-note paper-panel">
         <div>
           <span>想先看懂再挑</span>
@@ -64,8 +84,10 @@
       </div>
     </section>
 
+    <!-- ========== 精选茶品区 ========== -->
     <section class="container desktop-section">
       <div class="curated-layout">
+        <!-- 主列：热销精选茶品展示（4个卡片，2列网格） -->
         <div class="curated-main">
           <div class="section-title section-title-left">
             <h2>精选茶品</h2>
@@ -73,6 +95,7 @@
           </div>
 
           <div class="featured-product-grid" v-loading="hotLoading">
+            <!-- 热销茶品卡片：点击跳转到产品详情 -->
             <article
               v-for="item in featuredProducts"
               :key="item.id"
@@ -96,7 +119,9 @@
           </div>
         </div>
 
+        <!-- 侧栏：当季上新 + 馆主推荐 -->
         <aside class="curated-side">
+          <!-- 当季上新面板 -->
           <section class="curated-panel paper-panel" v-loading="newLoading">
             <div class="curated-panel__header">
               <strong>当季上新</strong>
@@ -116,6 +141,7 @@
             </article>
           </section>
 
+          <!-- 馆主推荐面板 -->
           <section class="curated-panel paper-panel" v-loading="recLoading">
             <div class="curated-panel__header">
               <strong>馆主推荐</strong>
@@ -138,6 +164,7 @@
       </div>
     </section>
 
+    <!-- ========== 品牌收尾区：引导用户去包间预约和茶事活动 ========== -->
     <section class="container desktop-section">
       <div class="brand-closing paper-panel">
         <div class="brand-closing__copy">
@@ -158,11 +185,16 @@
       </div>
     </section>
 
+    <!-- 页面底部页脚栏 -->
     <FooterBar />
   </div>
 </template>
 
 <script setup>
+/**
+ * 首页脚本逻辑
+ * 负责：轮播图自动播放、加载分类/热销/新品/推荐数据
+ */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import FooterBar from '@/components/FooterBar.vue'
@@ -171,17 +203,19 @@ import { categoryApi, productApi } from '@/api/product'
 import { resolveProductImage } from '@/utils/localImage'
 import { decorateCategories } from '@/utils/teaCategories'
 
-const categories = ref([])
-const hotProducts = ref([])
-const newProducts = ref([])
-const recommendProducts = ref([])
-const catLoading = ref(false)
-const hotLoading = ref(false)
-const newLoading = ref(false)
-const recLoading = ref(false)
-const currentHeroIndex = ref(0)
-let heroTimer = null
+// ===== 响应式状态定义 =====
+const categories = ref([])       // 茶类分类列表
+const hotProducts = ref([])      // 热销产品列表
+const newProducts = ref([])      // 新品产品列表
+const recommendProducts = ref([]) // 推荐产品列表
+const catLoading = ref(false)    // 分类加载状态
+const hotLoading = ref(false)    // 热销加载状态
+const newLoading = ref(false)    // 新品加载状态
+const recLoading = ref(false)    // 推荐加载状态
+const currentHeroIndex = ref(0)  // 当前轮播图索引
+let heroTimer = null             // 轮播图自动播放定时器句柄
 
+// ===== 轮播图数据：三张品牌轮播，每张包含标题、描述、注释和图片 =====
 const heroSlides = [
     {
       id: 'home-hero-1',
@@ -215,25 +249,44 @@ const heroSlides = [
     }
 ]
 
+// ===== 计算属性 =====
+// 热销精选：取前4个热销产品
 const featuredProducts = computed(() => hotProducts.value.slice(0, 4))
+// 当季上新：取前3个新品
 const seasonalProducts = computed(() => newProducts.value.slice(0, 3))
+// 馆主推荐：取前3个推荐产品
 const housePicks = computed(() => recommendProducts.value.slice(0, 3))
+// 当前激活的轮播图对象（根据 currentHeroIndex 取值）
 const activeHeroSlide = computed(() => heroSlides[currentHeroIndex.value] || heroSlides[0])
+
+/**
+ * 手动切换到指定索引的轮播图
+ * @param {number} index - 目标轮播图索引
+ */
 const setSlide = (index) => {
   currentHeroIndex.value = index
 }
 
+/**
+ * 切换到下一张轮播图（循环轮播）
+ */
 const goNextSlide = () => {
   currentHeroIndex.value = (currentHeroIndex.value + 1) % heroSlides.length
 }
 
+/**
+ * 启动轮播图自动播放（每5秒切换一次）
+ */
 const startHeroAutoplay = () => {
-  stopHeroAutoplay()
+  stopHeroAutoplay()  // 先清除旧定时器，避免重复启动
   heroTimer = window.setInterval(() => {
     goNextSlide()
   }, 5000)
 }
 
+/**
+ * 停止轮播图自动播放
+ */
 const stopHeroAutoplay = () => {
   if (heroTimer) {
     window.clearInterval(heroTimer)
@@ -241,6 +294,10 @@ const stopHeroAutoplay = () => {
   }
 }
 
+/**
+ * 组件挂载后：启动轮播自动播放，并发请求加载首页各类数据
+ * 使用 Promise.allSettled 确保每个请求独立处理，互不影响
+ */
 onMounted(async () => {
   startHeroAutoplay()
   catLoading.value = true
@@ -255,6 +312,7 @@ onMounted(async () => {
     productApi.getRecommend()
   ])
 
+  // 分别处理每个请求的结果，成功后填充对应数据
   if (categoryResult.status === 'fulfilled') {
     categories.value = decorateCategories(categoryResult.value)
   }
@@ -274,16 +332,21 @@ onMounted(async () => {
   recLoading.value = false
 })
 
+/**
+ * 组件卸载前：清除轮播定时器，防止内存泄漏
+ */
 onBeforeUnmount(() => {
   stopHeroAutoplay()
 })
 </script>
 
 <style scoped>
+/* ===== 页面整体布局 ===== */
 .home-page {
   min-height: 100vh;
 }
 
+/* ===== 主视觉轮播区（Hero Stage） ===== */
 .hero-stage {
   position: relative;
   height: 640px;
@@ -291,11 +354,13 @@ onBeforeUnmount(() => {
   background: linear-gradient(120deg, rgba(28, 24, 20, 0.96), rgba(26, 37, 42, 0.92) 58%, rgba(95, 61, 35, 0.88));
 }
 
+/* 轮播图片容器：绝对定位填充整个区域 */
 .hero-stage__media {
   position: absolute;
   inset: 0;
 }
 
+/* 单张轮播图：初始透明，激活时淡入 */
 .hero-stage__slide {
   position: absolute;
   inset: 0;
@@ -314,6 +379,7 @@ onBeforeUnmount(() => {
   object-position: center center;
 }
 
+/* 遮罩层：多层渐变叠加，让文字更清晰可读 */
 .hero-stage__veil {
   position: absolute;
   inset: 0;
@@ -324,6 +390,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+/* 轮播文案布局：居中排列，左侧对齐 */
 .hero-layout {
   position: relative;
   z-index: 1;
@@ -334,11 +401,13 @@ onBeforeUnmount(() => {
   padding-bottom: 84px;
 }
 
+/* 文案容器：限制最大宽度为600px */
 .hero-copy {
   width: min(100%, 600px);
   color: #fffaf2;
 }
 
+/* kicker 小标题样式 */
 .hero-kicker {
   display: inline-block;
   margin-bottom: 18px;
@@ -347,6 +416,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.34em;
 }
 
+/* 主标题：使用 display 字体，72px 大字号 */
 .hero-copy h1 {
   margin: 0;
   font-family: var(--font-display);
@@ -356,6 +426,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.06em;
 }
 
+/* 描述文案 */
 .hero-copy p {
   margin: 24px 0 0;
   color: rgba(255, 248, 240, 0.86);
@@ -363,12 +434,14 @@ onBeforeUnmount(() => {
   line-height: 1.95;
 }
 
+/* 行动按钮区域：横向排列 */
 .hero-actions {
   display: flex;
   gap: 14px;
   margin-top: 34px;
 }
 
+/* 注释行：横向换行排列 */
 .hero-notes {
   display: flex;
   flex-wrap: wrap;
@@ -380,6 +453,7 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
+/* 轮播指示器：水平居中置于轮播底部 */
 .hero-carousel-dots {
   position: absolute;
   z-index: 1;
@@ -390,6 +464,7 @@ onBeforeUnmount(() => {
   transform: translateX(-50%);
 }
 
+/* 指示圆点 */
 .hero-carousel-dots__item {
   width: 34px;
   height: 4px;
@@ -398,10 +473,12 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
+/* 激活状态的指示圆点 */
 .hero-carousel-dots__item.active {
   background: #fffaf2;
 }
 
+/* ===== 分类导购引导卡片 ===== */
 .category-shortcut-note {
   display: flex;
   align-items: center;
@@ -435,18 +512,21 @@ onBeforeUnmount(() => {
   letter-spacing: 0.14em;
 }
 
+/* ===== 精选茶品区布局 ===== */
 .curated-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.24fr) minmax(320px, 0.76fr);
   gap: 24px;
 }
 
+/* 热销产品网格：2列布局 */
 .featured-product-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
+/* 热销产品卡片：悬停上浮效果 */
 .featured-product-card {
   overflow: hidden;
   cursor: pointer;
@@ -459,6 +539,7 @@ onBeforeUnmount(() => {
   border-color: rgba(159, 83, 24, 0.18);
 }
 
+/* 产品图片容器：1:1 正方形比例 */
 .featured-product-card__image {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -473,10 +554,12 @@ onBeforeUnmount(() => {
   transition: transform 240ms ease;
 }
 
+/* 悬停时图片微微放大 */
 .featured-product-card:hover .featured-product-card__image img {
   transform: scale(1.04);
 }
 
+/* 热销角标 */
 .featured-product-card__badge {
   position: absolute;
   top: 16px;
@@ -488,6 +571,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.12em;
 }
 
+/* 产品信息区域 */
 .featured-product-card__body {
   padding: 22px;
 }
@@ -515,6 +599,7 @@ onBeforeUnmount(() => {
   line-height: 1.85;
 }
 
+/* 价格和销量区域 */
 .featured-product-card__meta {
   display: flex;
   align-items: center;
@@ -533,6 +618,7 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
+/* ===== 侧栏样式 ===== */
 .curated-side {
   display: grid;
   gap: 20px;
@@ -563,6 +649,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.08em;
 }
 
+/* 小型产品条目：图片+信息+价格，可点击 */
 .mini-product {
   display: grid;
   grid-template-columns: 92px 1fr auto;
@@ -606,6 +693,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
+/* ===== 品牌收尾区 ===== */
 .brand-closing {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
@@ -635,6 +723,7 @@ onBeforeUnmount(() => {
   gap: 14px;
 }
 
+/* 收尾区链接卡片 */
 .closing-link {
   display: block;
   padding: 22px 24px;
@@ -665,6 +754,7 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 
+/* ===== 响应式布局（平板及以下） ===== */
 @media (max-width: 1024px) {
   .hero-layout {
     min-height: calc(640px - var(--nav-height) - 16px);

@@ -1,14 +1,27 @@
+<!--
+  全部茶品页（ProductList.vue）
+  云茗茶馆的全部茶品列表页面，支持筛选、排序和分页浏览。
+  页面功能：
+  - 顶部品牌区介绍浏览方式
+  - 面包屑导航
+  - 筛选面板：关键词搜索、分类选择、排序方式、页码切换
+  - 产品网格展示（4列），每张卡片可点击跳转到详情
+  - 分页组件
+-->
 <template>
   <div class="page">
+    <!-- 页面顶部导航栏 -->
     <NavBar />
 
     <div class="container list-page">
+      <!-- ========== 顶部：品牌介绍区 ========== -->
       <section class="inner-hero paper-panel">
         <div class="inner-hero__copy">
           <h1>在整页茶单里慢慢挑，看见真正想带回去细品的那几款</h1>
           <p>无论你想找日常常备的口粮茶，还是想挑一款待客、送礼的茶，这里都可以按自己的节奏慢慢比较。</p>
         </div>
 
+        <!-- 右侧浏览方式说明 -->
         <div class="inner-hero__aside">
           <strong>浏览方式</strong>
           <p>可以先按分类缩小范围，再结合价格、销量与关键词一点点收窄；若只是想快速挑礼盒或常备茶，先看热销与推荐会更省心。</p>
@@ -19,13 +32,16 @@
         </div>
       </section>
 
+      <!-- ========== 面包屑导航 ========== -->
       <div class="breadcrumb">
         <router-link to="/">首页</router-link>
         <span>/</span>
         <span>全部茶品</span>
       </div>
 
+      <!-- ========== 筛选面板 ========== -->
       <section class="filter-panel paper-panel">
+        <!-- 筛选项标题与当前总数 -->
         <div class="filter-panel__heading">
           <div>
             <span>筛选条件</span>
@@ -34,7 +50,9 @@
           <em>当前共 {{ total }} 款在列茶品</em>
         </div>
 
+        <!-- 筛选控件行：关键词搜索 + 分类下拉 + 排序下拉 + 查看按钮 -->
         <div class="filter-row">
+          <!-- 关键词搜索输入框 -->
           <el-input
             v-model="keyword"
             placeholder="搜索茶品名称、风味或礼盒"
@@ -45,10 +63,12 @@
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
 
+          <!-- 分类下拉选择器 -->
           <el-select v-model="categoryId" placeholder="全部分类" clearable @change="onFilterChange">
             <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
 
+          <!-- 排序方式下拉选择器 -->
           <el-select v-model="sort" placeholder="默认排序" @change="onFilterChange">
             <el-option label="默认排序" value="" />
             <el-option label="价格由低到高" value="price_asc" />
@@ -56,11 +76,14 @@
             <el-option label="销量优先" value="sales_desc" />
           </el-select>
 
+          <!-- 查看结果按钮 -->
           <el-button type="primary" @click="doSearch">查看结果</el-button>
         </div>
       </section>
 
+      <!-- ========== 产品网格展示区（4列） ========== -->
       <section class="product-grid" v-loading="loading">
+        <!-- 单个产品卡片：点击跳转到产品详情页 -->
         <article
           v-for="p in products"
           :key="p.id"
@@ -69,6 +92,7 @@
         >
           <div class="product-card__image">
             <img :src="resolveProductImage(p, p.mainImage)" :alt="p.name">
+            <!-- 标签区：热销/新品角标 -->
             <div class="product-card__tags">
               <span v-if="p.isHot" class="tag tag-hot">热销</span>
               <span v-if="p.isNew" class="tag tag-new">新品</span>
@@ -87,11 +111,13 @@
           </div>
         </article>
 
+        <!-- 空状态提示：无数据时显示 -->
         <div v-if="!loading && products.length === 0" class="empty paper-panel">
           当前条件下还没有找到合适茶品，不妨换个茶类、清空关键词，或换一种排序方式再看看。
         </div>
       </section>
 
+      <!-- ========== 分页组件 ========== -->
       <div class="pagination" v-if="total > 0">
         <el-pagination
           background
@@ -104,11 +130,16 @@
       </div>
     </div>
 
+    <!-- 页面底部页脚栏 -->
     <FooterBar />
   </div>
 </template>
 
 <script setup>
+/**
+ * 全部茶品页脚本逻辑
+ * 负责：筛选条件管理、搜索请求、分类列表加载、分页处理
+ */
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
@@ -116,17 +147,26 @@ import FooterBar from '@/components/FooterBar.vue'
 import { categoryApi, productApi } from '@/api/product'
 import { resolveProductImage } from '@/utils/localImage'
 
+// ===== 路由实例：用于读取 URL 查询参数（如从首页分类快捷入口跳转过来的参数） =====
 const route = useRoute()
-const keyword = ref('')
-const categoryId = ref(null)
-const sort = ref('')
-const page = ref(1)
-const size = ref(12)
-const products = ref([])
-const categories = ref([])
-const total = ref(0)
-const loading = ref(false)
 
+// ===== 筛选条件响应式变量 =====
+const keyword = ref('')       // 搜索关键词
+const categoryId = ref(null)  // 分类ID筛选（null表示全部）
+const sort = ref('')          // 排序方式（空字符串表示默认排序）
+const page = ref(1)           // 当前页码
+const size = ref(12)          // 每页显示数量
+
+// ===== 数据响应式变量 =====
+const products = ref([])      // 当前页产品列表
+const categories = ref([])    // 全部分类列表（用于下拉选择）
+const total = ref(0)          // 符合条件的产品总数
+const loading = ref(false)    // 加载状态
+
+/**
+ * 执行搜索请求
+ * 根据当前筛选条件（关键词、分类、排序、分页）向 API 发起搜索
+ */
 const doSearch = async () => {
   loading.value = true
   try {
@@ -145,16 +185,27 @@ const doSearch = async () => {
   }
 }
 
+/**
+ * 筛选条件变更处理
+ * 当分类或排序改变时，重置到第1页并重新搜索
+ */
 const onFilterChange = () => {
   page.value = 1
   doSearch()
 }
 
+/**
+ * 组件挂载后：
+ * 1. 加载全部分类列表用于下拉选择
+ * 2. 读取 URL 查询参数（分类ID、关键词），如果存在则预填
+ * 3. 执行初始搜索
+ */
 onMounted(async () => {
   categoryApi.getAll().then((r) => {
     categories.value = r
   })
 
+  // 从 URL 参数读取初始筛选条件（支持从其他页面带参数跳转）
   if (route.query.categoryId) {
     categoryId.value = Number(route.query.categoryId)
   }
@@ -167,17 +218,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ===== 页面整体布局 ===== */
 .page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* 列表页主区域 */
 .list-page {
   flex: 1;
   padding-top: 28px;
 }
 
+/* ===== 顶部品牌介绍面板 ===== */
 .inner-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.78fr);
@@ -239,6 +293,7 @@ onMounted(async () => {
   letter-spacing: 0.14em;
 }
 
+/* ===== 面包屑导航 ===== */
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -248,10 +303,12 @@ onMounted(async () => {
   font-size: 13px;
 }
 
+/* ===== 筛选面板 ===== */
 .filter-panel {
   padding: 24px;
 }
 
+/* 筛选项标题行 */
 .filter-panel__heading {
   display: flex;
   align-items: center;
@@ -283,6 +340,7 @@ onMounted(async () => {
   letter-spacing: 0.08em;
 }
 
+/* 筛选控件行：搜索框 + 分类下拉 + 排序下拉 + 按钮 */
 .filter-row {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) 200px 200px 140px;
@@ -293,6 +351,7 @@ onMounted(async () => {
   min-width: 0;
 }
 
+/* ===== 产品网格（4列） ===== */
 .product-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -300,6 +359,7 @@ onMounted(async () => {
   margin-top: 28px;
 }
 
+/* 产品卡片：悬停上浮效果 */
 .product-card {
   overflow: hidden;
   cursor: pointer;
@@ -312,6 +372,7 @@ onMounted(async () => {
   border-color: rgba(159, 83, 24, 0.18);
 }
 
+/* 产品图片容器：1:1 正方形，悬停图片微微放大 */
 .product-card__image {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -330,6 +391,7 @@ onMounted(async () => {
   transform: scale(1.04);
 }
 
+/* 标签区：热销/新品角标 */
 .product-card__tags {
   position: absolute;
   top: 14px;
@@ -353,6 +415,7 @@ onMounted(async () => {
   background: rgba(47, 79, 62, 0.92);
 }
 
+/* 产品信息区域 */
 .product-card__body {
   padding: 20px;
 }
@@ -380,6 +443,7 @@ onMounted(async () => {
   line-height: 1.8;
 }
 
+/* 价格与销量区域 */
 .product-card__meta {
   display: flex;
   align-items: center;
@@ -398,12 +462,14 @@ onMounted(async () => {
   font-size: 13px;
 }
 
+/* ===== 分页区域 ===== */
 .pagination {
   display: flex;
   justify-content: center;
   margin-top: 34px;
 }
 
+/* 空状态提示 */
 .empty {
   grid-column: 1 / -1;
   padding: 54px 20px;

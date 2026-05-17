@@ -1,8 +1,19 @@
+<!--
+  我的报名页（MySignups.vue）
+  云茗茶馆的用户活动报名记录页面，展示所有已报名的茶事活动。
+  页面功能：
+  - 顶部概览区：当前报名记录数
+  - 报名记录列表：每项展示活动封面图、标题、开始时间、报名状态
+  - 支持取消报名（待确认状态）
+  - 空报名提示
+-->
 <template>
   <div class="page">
+    <!-- 页面顶部导航栏 -->
     <NavBar />
 
     <div class="container signups-page" v-loading="loading">
+      <!-- ========== 顶部：概览区 ========== -->
       <section class="inner-hero paper-panel">
         <div class="inner-hero__copy">
           <h1>把每一次赴茶会的约定轻轻记下，时间、主题与报名状态都看得清楚</h1>
@@ -20,18 +31,23 @@
         </div>
       </section>
 
+      <!-- ========== 报名记录区 ========== -->
       <section class="desktop-section">
         <div class="section-title section-title-left">
           <h2>报名记录</h2>
           <p>每条记录都带着活动封面、开始时间与报名状态，方便你按自己的步调回看，也不会错过已经约好的茶事。</p>
         </div>
 
+        <!-- 有报名时：3列布局（图片 + 信息 + 状态操作） -->
         <div v-if="signups.length > 0" class="signup-list">
+          <!-- 单个报名条目卡片 -->
           <article v-for="item in signups" :key="item.id" class="signup-card paper-panel">
+            <!-- 活动封面图 -->
             <div class="signup-card__image">
               <img :src="resolveActivityImage(item, item.activityCover)" :alt="item.activityTitle">
             </div>
 
+            <!-- 活动信息 -->
             <div class="signup-card__body">
               <h3>{{ item.activityTitle }}</h3>
               <div class="signup-card__meta">
@@ -40,13 +56,16 @@
               </div>
             </div>
 
+            <!-- 右侧状态与操作列 -->
             <div class="signup-card__side">
               <div class="signup-card__status">{{ item.statusText }}</div>
+              <!-- 待确认状态：显示取消报名按钮 -->
               <el-button v-if="item.status === 0" type="warning" @click="doCancel(item)">取消报名</el-button>
             </div>
           </article>
         </div>
 
+        <!-- 空报名提示 -->
         <div v-else-if="!loading" class="empty-state paper-panel">
           <h3>暂无报名记录</h3>
           <p>等你选好想参加的茶事后，这里就会慢慢留下你的赴约记录，方便之后随时回看。</p>
@@ -55,11 +74,16 @@
       </section>
     </div>
 
+    <!-- 页面底部页脚栏 -->
     <FooterBar />
   </div>
 </template>
 
 <script setup>
+/**
+ * 我的报名页脚本逻辑
+ * 负责：加载报名列表、取消报名
+ */
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import NavBar from '@/components/NavBar.vue'
@@ -67,11 +91,20 @@ import FooterBar from '@/components/FooterBar.vue'
 import { activitySignupApi } from '@/api/booking'
 import { resolveActivityImage } from '@/utils/localImage'
 
-const signups = ref([])
-const loading = ref(false)
+// ===== 响应式变量 =====
+const signups = ref([])       // 报名列表
+const loading = ref(false)    // 页面加载状态
 
+/**
+ * 格式化时间戳为中文日期时间字符串
+ * @param {string|number} value - 时间戳
+ * @returns {string} 格式化后的日期时间，空值返回空字符串
+ */
 const formatDate = (value) => (value ? new Date(value).toLocaleString('zh-CN') : '')
 
+/**
+ * 加载报名列表数据
+ */
 const loadData = async () => {
   loading.value = true
   try {
@@ -81,6 +114,11 @@ const loadData = async () => {
   }
 }
 
+/**
+ * 取消报名
+ * 弹出确认框后调用 API，成功后刷新列表
+ * @param {object} item - 报名条目对象
+ */
 const doCancel = async (item) => {
   try {
     await ElMessageBox.confirm('确定取消报名？', '提示', { type: 'warning' })
@@ -88,14 +126,18 @@ const doCancel = async (item) => {
     ElMessage.success('已取消')
     loadData()
   } catch (e) {
-    // cancelled
+    // 用户取消操作
   }
 }
 
+/**
+ * 组件挂载后：加载报名列表
+ */
 onMounted(loadData)
 </script>
 
 <style scoped>
+/* ===== 页面整体布局 ===== */
 .page {
   min-height: 100vh;
   display: flex;
@@ -107,6 +149,7 @@ onMounted(loadData)
   padding-top: 28px;
 }
 
+/* ===== 顶部概览面板 ===== */
 .inner-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
@@ -160,6 +203,7 @@ onMounted(loadData)
   letter-spacing: 0.06em;
 }
 
+/* 概览统计行 */
 .hero-stat {
   display: flex;
   align-items: baseline;
@@ -186,17 +230,20 @@ onMounted(loadData)
   letter-spacing: 0.16em;
 }
 
+/* ===== 报名列表 ===== */
 .signup-list {
   display: grid;
   gap: 18px;
 }
 
+/* 报名卡片：3列（图片 + 信息 + 状态操作） */
 .signup-card {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 180px;
   overflow: hidden;
 }
 
+/* 活动封面图 */
 .signup-card__image {
   min-height: 220px;
   background: #ece0cd;
@@ -208,6 +255,7 @@ onMounted(loadData)
   object-fit: cover;
 }
 
+/* 信息区域 */
 .signup-card__body {
   display: flex;
   flex-direction: column;
@@ -225,6 +273,7 @@ onMounted(loadData)
   letter-spacing: 0.05em;
 }
 
+/* 元信息：开始时间、报名状态 */
 .signup-card__meta {
   display: grid;
   gap: 8px;
@@ -232,6 +281,7 @@ onMounted(loadData)
   font-size: 13px;
 }
 
+/* 右侧状态与操作列 */
 .signup-card__side {
   display: flex;
   flex-direction: column;
@@ -248,6 +298,7 @@ onMounted(loadData)
   font-weight: 700;
 }
 
+/* ===== 空状态提示 ===== */
 .empty-state {
   padding: 54px 32px;
   text-align: center;
